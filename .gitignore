@@ -1,0 +1,36 @@
+# Visual Studio build output
+x64/
+x86/
+Debug/
+Release/
+ipch/
+*.VC.db
+*.VC.opendb
+
+# Visual Studio IDE files
+.vs/
+*.user
+*.suo
+*.sdf
+*.opensdf
+*.psess
+*.vsp
+*.vspx
+*.sap
+
+# Compiled object files / intermediates
+*.obj
+*.pdb
+*.ilk
+*.exp
+*.lib
+*.dll
+*.exe
+
+# Shader compiled output (we compile at runtime)
+*.cso
+*.fxo
+
+# Windows thumbnail cache
+Thumbs.db
+Desktop.ini

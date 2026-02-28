@@ -1,0 +1,7 @@
+<Solution>
+  <Configurations>
+    <Platform Name="x64" />
+    <Platform Name="x86" />
+  </Configurations>
+  <Project Path="ScientificFieldVisualizer/ScientificFieldVisualizer.vcxproj" Id="d13a858a-da0d-4224-ae69-64ed4a5e41ac" />
+</Solution>
