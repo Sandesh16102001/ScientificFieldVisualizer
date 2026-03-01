@@ -4,6 +4,8 @@ A real-time scalar field visualizer built on Direct3D 11, rendering a per-vertex
 scientific field (stress-like distribution) over a high-resolution triangle mesh
 with colormaps, isolines, wireframe overlay, and interactive deformation.
 
+![Preview](screenshots/preview.png)
+
 ---
 
 ## Mesh Choice — Why a Procedural UV-Sphere
@@ -184,39 +186,11 @@ the `.exe` directly from `x64\Debug\`, copy the `.hlsl` files next to it first.
 
 ---
 
-## Interesting Problem Solved with LLM Assistance
-
-The trickiest part of the project was threading the GPU compute output back into the
-vertex shader **without breaking the existing draw-call state**.  The issue: a
-`RWStructuredBuffer` UAV bound as a compute output cannot be simultaneously bound as
-an SRV for the vertex shader — Direct3D 11 enforces this.
-
-Through back-and-forth with the LLM I learned about the correct pattern:
-
-1. Dispatch compute → unbind UAV (`CSSetUnorderedAccessViews(0, 1, nullptr, nullptr)`).
-2. Then bind the same resource as an SRV to the VS (`VSSetShaderResources`).
-
-This "UAV→SRV swap" pattern I now see as fundamental to any D3D 11 compute +
-rasterise pipeline.  It is easy to overlook because the API does not error loudly —
-it just silently unbinds one side, causing the shader to read zeros.  The LLM helped
-me trace that silent failure and understand *why* the unbind is necessary, which was
-more valuable than just getting the fix.
-
----
-
 ## One Thing I Would Do Differently With More Time
 
-I would replace the flat per-face normals produced by the normal-recompute compute
-shader with **smooth per-vertex normals computed by accumulation**.  The current
-approach: each thread writes the same face normal to all three vertices of its
-triangle, giving faceted shading at high displacement amplitudes.
-
-A proper smooth-normal pass would:
-1. Accumulate face-normal contributions into a `RWStructuredBuffer<float3>` with
-   `InterlockedAdd` on float components (or a two-pass reduce).
-2. Normalize the accumulated vector per vertex in a second pass.
-
-This requires atomic floating-point accumulation (or reinterpreting as int) which
-is non-trivial in HLSL `cs_5_0` — that is why I deferred it.  With more time it
-would be the single biggest visual quality improvement, especially noticeable when
-deformation amplitude is high and the mesh silhouette shows hard facet edges.
+With more time I would improve how surface normals are calculated after the mesh
+is deformed.  Right now every triangle gets one flat normal shared across its three
+corners, which causes visible hard edges at high deformation.  A better approach
+would be to blend the normals at shared corners so the surface looks smooth.
+I skipped this because it requires some extra GPU synchronisation that was outside
+the scope of the project, but it would noticeably improve the visual quality.
