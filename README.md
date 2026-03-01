@@ -106,10 +106,10 @@ pass keeps lighting correct.
 > **Which solution file to open:**
 > | File | Works with |
 > |---|---|
-> | `ScientificFieldVisualizer.sln` | VS 2022 any version, VS 2019, VS 2017 |
+> | `ScientificFieldVisualizer.sln` | VS 2022 (all versions) — **recommended** |
 > | `ScientificFieldVisualizer.slnx` | VS 2022 **v17.10+** only |
 >
-> If Visual Studio's *Open Solution* dialog does not show `ScientificFieldVisualizer.slnx`, use the `.sln` file instead — it references the same project and all configurations are identical.
+> Both files reference the same project. Use `.sln` if the Open Solution dialog does not show `.slnx`.
 
 ### Steps
 
