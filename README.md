@@ -36,7 +36,7 @@ Practical advantages of this choice:
 per-vertex normals stored directly in the vertex buffer.
 
 **At runtime with any non-zero displacement amplitude:** the `NormalComputeShader`
-runs a [per-face normal recomputation pass](#gpu-compute-passes) every frame.
+runs a per-face normal recomputation pass every frame.
 Each triangle's three deformed positions are used to compute `cross(edge0, edge1)`,
 giving a face normal that matches the actual displaced geometry.  This face-normal
 approach is justified here because:
@@ -46,45 +46,6 @@ approach is justified here because:
 - The deformation field is not smooth (it follows `scalarValue` which is `sin·cos`),
   so interpolating the original smooth normals across deformed triangles would be
   *worse* than per-face normals after deformation.
-
----
-
-## GPU Compute Passes
-
-Two compute passes run every frame, both before the draw call:
-
-### 1 — Scalar Smoothing (`ComputeShader.hlsl`)
-Reduces single-vertex scalar spikes by averaging the three corner scalars of each
-triangle.  Each thread handles one vertex; it identifies its parent triangle
-(`triBase = (i/3)*3`) and averages the three values.
-- **Input:** `StructuredBuffer<float>` of original per-vertex scalars (owned by `ModelClass`)
-- **Output:** `RWStructuredBuffer<float>` of smoothed scalars, read by the VS via `t0`
-
-### 2 — Normal Recomputation (`NormalComputeShader.hlsl`)
-Rebuilds face normals from displaced geometry so Lambertian shading stays correct.
-Each thread handles one triangle (64 threads per group).
-- **Input:** `StructuredBuffer<PosDisp>` of `{float3 position, float3 displacement}` (owned by `ModelClass`)
-- **Output:** `RWStructuredBuffer<float3>` of face normals, read by the VS via `t1`
-
----
-
-## Features
-
-| Feature | Level | Detail |
-|---|---|---|
-| Triangle mesh ≥ 5,000 triangles | Core | UV-sphere, 12,800 triangles |
-| Per-vertex scalar field | Core | `f = sin(x)·cos(z)·0.5 + 0.5` |
-| Analytical colormaps | Core | Viridis (degree-6 polynomial), Jet (piecewise linear) |
-| Orbital camera | Core | Orbit / zoom / pan |
-| Lambertian diffuse lighting | Core | Hardcoded light dir `(1,1,−1)`, 0.15 ambient |
-| Blinn-Phong specular | Core+ | Halfway-vector specular (shininess=32), white highlight separate from colormap |
-| Colormap selector | Level 2 | Runtime toggle, both analytical |
-| Wireframe overlay | Level 2 | Barycentric `fwidth` trick, no second draw call |
-| Scalar range control | Level 2 | Interactive clamp with distinct out-of-range color |
-| Displacement / deformation | Level 3 | Per-vertex vector field, GPU vertex shader |
-| Isoline rendering | Level 3 | Anti-aliased, user-controlled interval |
-| GPU compute — scalar smoothing | Level 3 | Per-face average, `ComputeShader.hlsl` |
-| GPU compute — normal recompute | Level 3 | Post-deformation face normals, `NormalComputeShader.hlsl` |
 
 ---
 
@@ -142,9 +103,17 @@ pass keeps lighting correct.
 - **Windows SDK 10.0+** (Direct3D 11 headers and `d3dcompiler.lib` are part of the SDK)
 - No external packages or NuGet dependencies
 
+> **Which solution file to open:**
+> | File | Works with |
+> |---|---|
+> | `ScientificFieldVisualizer.sln` | VS 2022 any version, VS 2019, VS 2017 |
+> | `ScientificFieldVisualizer.slnx` | VS 2022 **v17.10+** only |
+>
+> If Visual Studio's *Open Solution* dialog does not show `ScientificFieldVisualizer.slnx`, use the `.sln` file instead — it references the same project and all configurations are identical.
+
 ### Steps
 
-1. Open `ScientificFieldVisualizer.slnx` in Visual Studio 2022.
+1. Open `ScientificFieldVisualizer.sln` (or `.slnx` if on VS 2022 v17.10+) in Visual Studio 2022.
 2. Set the configuration to **Debug** (or Release) and the platform to **x64**.
 3. Press **F7** (or *Build → Build Solution*) — the project should compile with zero errors.
 4. Press **F5** (or *Debug → Start Debugging*) to run.
