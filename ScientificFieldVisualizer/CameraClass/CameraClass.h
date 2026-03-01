@@ -17,6 +17,7 @@ public:
 	// Builds the view matrix from current spherical state
 	void Render();
 	void GetViewMatrix(XMMATRIX& viewMatrix);
+	XMFLOAT3 GetPosition() const { return XMFLOAT3(m_posX, m_posY, m_posZ); }
 
 private:
 	// Spherical-coordinate orbital camera
@@ -28,6 +29,11 @@ private:
 	float    m_targetX;
 	float    m_targetY;
 	float    m_targetZ;
+
+	// Cached cartesian eye position (valid after Render() each frame)
+	float    m_posX;
+	float    m_posY;
+	float    m_posZ;
 
 	XMMATRIX m_ViewMatrix;
 };

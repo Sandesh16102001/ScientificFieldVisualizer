@@ -43,16 +43,13 @@ void ShaderClass::Shutdown()
 	ShutdownShader();
 }
 
-bool ShaderClass::Render(ID3D11DeviceContext* context, int indexCount, XMMATRIX world, XMMATRIX view, XMMATRIX projection, int colormapIndex, int wireframeOn, float scalarMin, float scalarMax)
+bool ShaderClass::Render(ID3D11DeviceContext* context, int indexCount, const DrawParams& params)
 {
-	bool result;
-
-	result = SetShaderParameters(context, world, view, projection, colormapIndex, wireframeOn, scalarMin, scalarMax);
+	bool result = SetShaderParameters(context, params);
 	if (!result)
 		return false;
 
 	RenderShader(context, indexCount);
-
 	return true;
 }
 
@@ -63,7 +60,7 @@ bool ShaderClass::InitializeShader(ID3D11Device* device, HWND hwnd , WCHAR* vsfi
 	ID3D10Blob*					errorMessage;
 	ID3D10Blob*					vertexShaderBuffer;
 	ID3D10Blob*					pixelShaderBuffer;
-	D3D11_INPUT_ELEMENT_DESC	polygonLayout[4];
+	D3D11_INPUT_ELEMENT_DESC	polygonLayout[5];
 	unsigned int				numElements;
 	D3D11_BUFFER_DESC			matrixBufferDesc;
 
@@ -163,6 +160,14 @@ bool ShaderClass::InitializeShader(ID3D11Device* device, HWND hwnd , WCHAR* vsfi
 	polygonLayout[3].AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;
 	polygonLayout[3].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
 	polygonLayout[3].InstanceDataStepRate = 0;
+
+	polygonLayout[4].SemanticName = "TEXCOORD";
+	polygonLayout[4].SemanticIndex = 3;
+	polygonLayout[4].Format = DXGI_FORMAT_R32G32B32_FLOAT;
+	polygonLayout[4].InputSlot = 0;
+	polygonLayout[4].AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;
+	polygonLayout[4].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
+	polygonLayout[4].InstanceDataStepRate = 0;
 
 	// Get a count of the elements in the layout.
 	numElements = sizeof(polygonLayout) / sizeof(polygonLayout[0]);
@@ -288,47 +293,54 @@ void ShaderClass::OutputShaderErrorMessage(ID3D10Blob* errormsg, HWND hwnd, WCHA
 
 }
 
-bool ShaderClass::SetShaderParameters(ID3D11DeviceContext* deviceContext, XMMATRIX world, XMMATRIX view, XMMATRIX projection, int colormapIndex, int wireframeOn, float scalarMin, float scalarMax)
+bool ShaderClass::SetShaderParameters(ID3D11DeviceContext* deviceContext, const DrawParams& params)
 {
-	HRESULT hr ;
+	HRESULT hr;
 	D3D11_MAPPED_SUBRESOURCE mappedResource;
 	MatrixBufferTye* dataPtr;
-	unsigned int bufferNumber;
 
+	XMMATRIX world = XMMatrixTranspose(params.world);
+	XMMATRIX view  = XMMatrixTranspose(params.view);
+	XMMATRIX proj  = XMMatrixTranspose(params.proj);
 
-	world = XMMatrixTranspose(world);
-	view = XMMatrixTranspose(view);
-	projection = XMMatrixTranspose(projection);
-
-
-	// Lock the constant buffer so it can be written to.
+	// --- Update VS matrix constant buffer ---
 	hr = deviceContext->Map(m_MatrixBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
 	if (FAILED(hr))
 		return false;
 
 	dataPtr = (MatrixBufferTye*)mappedResource.pData;
-
-	// Copy the matrices into the constant buffer.
-	dataPtr->world = world;
-	dataPtr->view = view;
-	dataPtr->projection = projection;
+	dataPtr->world                = world;
+	dataPtr->view                 = view;
+	dataPtr->projection           = proj;
+	dataPtr->displacementAmplitude = params.displacementAmplitude;
+	dataPtr->pad[0] = dataPtr->pad[1] = dataPtr->pad[2] = 0.0f;
 
 	deviceContext->Unmap(m_MatrixBuffer, 0);
+	deviceContext->VSSetConstantBuffers(0, 1, &m_MatrixBuffer);
 
-	bufferNumber = 0;
-	deviceContext->VSSetConstantBuffers(bufferNumber, 1, &m_MatrixBuffer);
+	// Bind both VS structured buffer SRVs in a single call:
+	//   t0 = smoothedScalars   (from ComputeShaderClass output)
+	//   t1 = recomputedNormals (from NormalComputeClass output)
+	ID3D11ShaderResourceView* vsSrvs[2] = { params.scalarSRV, params.normalSRV };
+	deviceContext->VSSetShaderResources(0, 2, vsSrvs);
 
-	// --- Update PS shader-params buffer ---
+	// --- Update PS shader-params constant buffer ---
 	D3D11_MAPPED_SUBRESOURCE mappedParams;
 	hr = deviceContext->Map(m_ShaderParamsBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedParams);
 	if (FAILED(hr))
 		return false;
 
 	ShaderParamsType* paramsPtr = (ShaderParamsType*)mappedParams.pData;
-	paramsPtr->colormapIndex = colormapIndex;
-	paramsPtr->wireframeOn   = wireframeOn;
-	paramsPtr->scalarMin     = scalarMin;
-	paramsPtr->scalarMax     = scalarMax;
+	paramsPtr->colormapIndex   = params.colormapIndex;
+	paramsPtr->wireframeOn     = params.wireframeOn;
+	paramsPtr->isolineOn       = params.isolineOn;
+	paramsPtr->pad             = 0;
+	paramsPtr->scalarMin       = params.scalarMin;
+	paramsPtr->scalarMax       = params.scalarMax;
+	paramsPtr->isolineInterval = params.isolineInterval;
+	paramsPtr->pad2            = 0.0f;
+	paramsPtr->cameraPos       = params.cameraPos;
+	paramsPtr->pad3            = 0.0f;
 
 	deviceContext->Unmap(m_ShaderParamsBuffer, 0);
 	deviceContext->PSSetConstantBuffers(0, 1, &m_ShaderParamsBuffer);

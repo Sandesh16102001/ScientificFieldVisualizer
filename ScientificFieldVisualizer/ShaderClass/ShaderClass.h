@@ -20,34 +20,59 @@ private  :
 		XMMATRIX world;
 		XMMATRIX view;
 		XMMATRIX projection;
+		float displacementAmplitude;
+		float pad[3];
 	};
 
 	struct ShaderParamsType
 	{
-		int   colormapIndex;  // 0 = Viridis, 1 = Jet
-		int   wireframeOn;    // 0 = off,     1 = on
-		float scalarMin;      // visible range lower bound
-		float scalarMax;      // visible range upper bound
-		// Total: 16 bytes
+		int      colormapIndex;    // 0 = Viridis, 1 = Jet
+		int      wireframeOn;      // 0 = off,     1 = on
+		int      isolineOn;        // 0 = off,     1 = on
+		int      pad;              // pad to 16-byte boundary
+		float    scalarMin;        // visible range lower bound
+		float    scalarMax;        // visible range upper bound
+		float    isolineInterval;  // spacing between contour lines
+		float    pad2;             // pad to 32 bytes
+		XMFLOAT3 cameraPos;       // world-space eye for Blinn-Phong specular
+		float    pad3;             // pad to 48 bytes
 	};
 
-public : 
+public:
+	// All per-draw parameters bundled so callers don't need a 16-argument call.
+	struct DrawParams
+	{
+		XMMATRIX  world;
+		XMMATRIX  view;
+		XMMATRIX  proj;
+		float     displacementAmplitude;
+		int       colormapIndex;   // 0 = Viridis, 1 = Jet
+		int       wireframeOn;     // 0/1
+		int       isolineOn;       // 0/1
+		float     scalarMin;
+		float     scalarMax;
+		float     isolineInterval;
+		XMFLOAT3  cameraPos;      // world-space eye for Blinn-Phong
+		ID3D11ShaderResourceView* scalarSRV;  // smoothed scalars   (t0)
+		ID3D11ShaderResourceView* normalSRV;  // recomputed normals (t1)
+	};
+
 	ShaderClass();
 	~ShaderClass();
 
-	bool Initialize(ID3D11Device* device , HWND hwnd);
+	bool Initialize(ID3D11Device* device, HWND hwnd);
 	void Shutdown();
-	bool Render(ID3D11DeviceContext* context, int indexCount, XMMATRIX world, XMMATRIX view, XMMATRIX projection, int colormapIndex, int wireframeOn, float scalarMin, float scalarMax);
+	bool Render(ID3D11DeviceContext* context, int indexCount, const DrawParams& params);
 
 
-private : 
+private:
 
 	bool InitializeShader(ID3D11Device*, HWND, WCHAR*, WCHAR*);
 	void ShutdownShader();
 	void OutputShaderErrorMessage(ID3D10Blob* errormsg, HWND hwnd, WCHAR* shaderfilename);
 
-	bool SetShaderParameters(ID3D11DeviceContext* deviceContext, XMMATRIX world, XMMATRIX view, XMMATRIX projection, int colormapIndex, int wireframeOn, float scalarMin, float scalarMax);
-	void RenderShader(ID3D11DeviceContext* deviceContext , int indexCount );
+	bool SetShaderParameters(ID3D11DeviceContext* deviceContext, const DrawParams& params);
+	void RenderShader(ID3D11DeviceContext* deviceContext, int indexCount);
 
 
 private : 

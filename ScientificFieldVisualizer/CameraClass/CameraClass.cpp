@@ -11,6 +11,10 @@ CameraClass::CameraClass()
 	m_targetX = 0.0f;
 	m_targetY = 0.0f;
 	m_targetZ = 0.0f;
+
+	m_posX = 0.0f;
+	m_posY = 0.0f;
+	m_posZ = 3.0f;
 }
 
 CameraClass::~CameraClass()
@@ -80,6 +84,11 @@ void CameraClass::Render()
 	float camX = m_targetX + m_radius * sinTheta * cosPhi;
 	float camY = m_targetY + m_radius * cosTheta;
 	float camZ = m_targetZ + m_radius * sinTheta * sinPhi;
+
+	// Cache for GetPosition() — used by the pixel shader for specular lighting
+	m_posX = camX;
+	m_posY = camY;
+	m_posZ = camZ;
 
 	XMVECTOR eye    = XMVectorSet(camX, camY, camZ, 1.0f);
 	XMVECTOR target = XMVectorSet(m_targetX, m_targetY, m_targetZ, 1.0f);

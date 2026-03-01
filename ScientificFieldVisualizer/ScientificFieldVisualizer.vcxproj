@@ -130,23 +130,39 @@
   <ItemGroup>
     <ClCompile Include="ApplicationClass\ApplicationClass.cpp" />
     <ClCompile Include="CameraClass\CameraClass.cpp" />
+    <ClCompile Include="ComputeShaderClass\ComputeShaderClass.cpp" />
     <ClCompile Include="D3DClass\D3DClass.cpp" />
     <ClCompile Include="InputClass\InputClass.cpp" />
     <ClCompile Include="Main.cpp" />
     <ClCompile Include="ModelClass\ModelClass.cpp" />
+    <ClCompile Include="NormalComputeClass\NormalComputeClass.cpp" />
     <ClCompile Include="ShaderClass\ShaderClass.cpp" />
     <ClCompile Include="SystemClass\SystemClass.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ApplicationClass\ApplicationClass.h" />
     <ClInclude Include="CameraClass\CameraClass.h" />
+    <ClInclude Include="ComputeShaderClass\ComputeShaderClass.h" />
     <ClInclude Include="D3DClass\D3DClass.h" />
     <ClInclude Include="InputClass\InputClass.h" />
     <ClInclude Include="ModelClass\ModelClass.h" />
+    <ClInclude Include="NormalComputeClass\NormalComputeClass.h" />
     <ClInclude Include="ShaderClass\ShaderClass.h" />
     <ClInclude Include="SystemClass\SystemClass.h" />
   </ItemGroup>
   <ItemGroup>
+    <FxCompile Include="NormalComputeShader.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Compute</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Compute</ShaderType>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </FxCompile>
+    <FxCompile Include="ComputeShader.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Compute</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Compute</ShaderType>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </FxCompile>
     <FxCompile Include="PixelShader.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Pixel</ShaderType>
